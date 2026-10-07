@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html data-page-node-id="r0aqmeL4scsTidUPXTEIfq" lang="zh-CN">
+<head data-page-node-id="uYyaI83hg7Ch6SO60pbKOB">
+<meta data-page-node-id="mcsL31VKTc5h6aSZsN12Wh" charset="UTF-8">
+<meta data-page-node-id="5mkha2tk5zCuXebh0M2ZQW" content="width=device-width, initial-scale=1.0" name="viewport">
+<title data-page-node-id="w3SRsh1NiNsdzSH63jJTly" data-pnid-children="G8XlBpLRxmWlsKtWS6LAEY">打地鼠</title>
+<style data-page-node-id="QcnFSkzeGd9GmAYZ9yuSVC" data-pnid-children="cIIqm3X6nkt7rZxwiSuOgC">
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(135deg, #2d5016 0%, #1a3409 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+h1 {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #a0c070;
+  margin-bottom: 16px;
+}
+
+/* Score Board */
+.scoreboard {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  background: rgba(0,0,0,0.3);
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: 2px solid #5a8c2a;
+}
+
+.score-item {
+  text-align: center;
+}
+
+.score-item .label {
+  font-size: 0.75rem;
+  color: #a0c070;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.score-item .value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #ffd966;
+  min-width: 60px;
+}
+
+/* Game Board */
+.game-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  background: #6b4226;
+  padding: 20px;
+  border-radius: 16px;
+  border: 4px solid #4a2e1a;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.hole {
+  width: 110px;
+  height: 110px;
+  background: radial-gradient(ellipse at center 80%, #3d2515 0%, #5c3a20 60%, #6b4226 100%);
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.hole::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 30%;
+  background: #2d1810;
+  border-radius: 50% 50% 0 0;
+}
+
+.mole {
+  position: absolute;
+  bottom: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  transition: bottom 0.15s ease-out;
+  z-index: 2;
+}
+
+.mole.up {
+  bottom: 10px;
+}
+
+.mole svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
+}
+
+/* Bonk effect */
+.bonk {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffd966;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+  pointer-events: none;
+  animation: bonkAnim 0.5s ease-out forwards;
+  z-index: 3;
+}
+
+@keyframes bonkAnim {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
+}
+
+/* Controls */
+.controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 12px 32px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-start {
+  background: #ffd966;
+  color: #2d5016;
+}
+
+.btn-start:hover {
+  background: #ffe680;
+  transform: translateY(-2px);
+}
+
+.btn-start:active {
+  transform: translateY(0);
+}
+
+.btn-start:disabled {
+  background: #555;
+  color: #888;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Game Over Overlay */
+.overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.overlay-content {
+  background: linear-gradient(135deg, #2d5016, #1a3409);
+  border: 3px solid #5a8c2a;
+  border-radius: 20px;
+  padding: 40px 60px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+
+.overlay-content h2 {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  color: #ffd966;
+}
+
+.overlay-content .final-score {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #ffd966;
+  margin: 16px 0;
+}
+
+.overlay-content p {
+  color: #a0c070;
+  margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .hole { width: 90px; height: 90px; }
+  .mole { width: 56px; height: 56px; }
+  h1 { font-size: 1.6rem; }
+  .game-board { padding: 14px; gap: 10px; }
+}
+</style>
+</head>
+<body data-page-node-id="e6N9XnO9IXSETZ1y9zwbG3">
+
+<h1 data-page-node-id="RYpm7nwDrtQL7giiyff4XY"><!--pnid:Te3seh9ThgqlxQDzgWLZeG-->打地鼠</h1>
+<p data-page-node-id="OVEFqgGajWNt1lqzTLjEDW" class="subtitle"><!--pnid:5qXzivmCzlCUMNoLzYUlDB-->点击地鼠得分，30 秒看你能打几只</p>
+
+<div data-page-node-id="1gqTSxNcIIQps8H7LVkImr" class="scoreboard">
+  <div data-page-node-id="lIFvYFMDyTrkq370oFfV20" class="score-item">
+    <div data-page-node-id="ouuwYbSDjbX5qXw9X6yVzP" class="label"><!--pnid:1xYFrBVIbQOnj3RufH2yJb-->得分</div>
+    <div data-page-node-id="J01uUglvO4idhNE6rlczda" class="value" id="score"><!--pnid:LVjOuaUkHY9CJezLjlXPTS-->0</div>
+  </div>
+  <div data-page-node-id="vCtCRnpbF2LHpV8C6L1SV8" class="score-item">
+    <div data-page-node-id="Ji9rNxnNS3fJrIMFrJb2zq" class="label"><!--pnid:voKC9ZVIpCHyfmYr5c1aDU-->倒计时</div>
+    <div data-page-node-id="h5QRCVgbfqfRMjoopAMaRm" class="value" id="time"><!--pnid:HhBx5QiSo6qLF5k6W0mZ5Z-->30</div>
+  </div>
+  <div data-page-node-id="darUeO5dkSKEbJGLNzU90d" class="score-item">
+    <div data-page-node-id="mL9CkIM1uRZm5WwVymxCZZ" class="label"><!--pnid:6ZMcGDZK4bx1sADDWlfuim-->最高分</div>
+    <div data-page-node-id="eYIbAN3WtLSI4aKJGn8mZ8" class="value" id="best"><!--pnid:v3vYUE32qA3ni2iGxNdqc3-->0</div>
+  </div>
+</div>
+
+<div data-page-node-id="uBbtxoX2T6KrHhanmgltRA" class="game-board" id="board"></div>
+
+<div data-page-node-id="Nsc6UpZVzTkXlenYxDc8E3" class="controls">
+  <button data-page-node-id="LWD5ExYyGfWMeiLExX1f4Z" class="btn btn-start" id="startBtn"><!--pnid:HMdEYQ3q6K4xrrGRZfrM4m-->开始游戏</button>
+</div>
+
+<div data-page-node-id="A0QFe840yuAy1GKhhBfmWr" class="overlay" id="overlay">
+  <div data-page-node-id="6IsF8Ya6KKWAO8XJMXYPU8" class="overlay-content">
+    <h2 data-page-node-id="NcupZcKDEmTtX7EPsuMr6K" id="overlayTitle"><!--pnid:asB9dckHpHM4xwpw29iGiC-->游戏结束</h2>
+    <div data-page-node-id="L2UojVMxdycHSXlvN5euIx" class="final-score" id="finalScore"><!--pnid:76XLwzR2lmVXp2ygprNBUg-->0</div>
+    <p data-page-node-id="41DL9tBxizgCMjfo7wTESz" id="overlayMsg"><!--pnid:mZn2r6BaK0rhQGAU1qtmgL-->再来一局？</p>
+    <button data-page-node-id="AMz2ysS6fy0yypzHQ8j3Pb" class="btn btn-start" id="restartBtn"><!--pnid:zGn1l7rmzuUFJpv7SNJlZm-->再来一局</button>
+  </div>
+</div>
+
+<script data-page-node-id="rWortKgOCdLwPIo7CPHWeg" data-pnid-children="107tMpwmV5PYuvGqS48Q6C">
+// Mole SVG
+const MOLE_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="50" cy="60" rx="38" ry="35" fill="#9b6b3f"/>
+  <ellipse cx="50" cy="68" rx="30" ry="25" fill="#c89060"/>
+  <circle cx="36" cy="48" r="7" fill="#fff"/>
+  <circle cx="64" cy="48" r="7" fill="#fff"/>
+  <circle cx="38" cy="50" r="4" fill="#222"/>
+  <circle cx="66" cy="50" r="4" fill="#222"/>
+  <ellipse cx="50" cy="65" rx="6" ry="4" fill="#5c3a1e"/>
+  <rect x="40" y="63" width="4" height="8" rx="2" fill="#fff" stroke="#9b6b3f" stroke-width="0.5"/>
+  <rect x="56" y="63" width="4" height="8" rx="2" fill="#fff" stroke="#9b6b3f" stroke-width="0.5"/>
+  <ellipse cx="28" cy="30" rx="8" ry="7" fill="#7a5230" transform="rotate(-15 28 30)"/>
+  <ellipse cx="72" cy="30" rx="8" ry="7" fill="#7a5230" transform="rotate(15 72 30)"/>
+</svg>`;
+
+const HOLE_COUNT = 9;
+const GAME_TIME = 30;
+const BOARD = document.getElementById("board");
+const SCORE_EL = document.getElementById("score");
+const TIME_EL = document.getElementById("time");
+const BEST_EL = document.getElementById("best");
+const START_BTN = document.getElementById("startBtn");
+const OVERLAY = document.getElementById("overlay");
+const OVERLAY_TITLE = document.getElementById("overlayTitle");
+const FINAL_SCORE_EL = document.getElementById("finalScore");
+const OVERLAY_MSG = document.getElementById("overlayMsg");
+const RESTART_BTN = document.getElementById("restartBtn");
+
+let score = 0;
+let timeLeft = GAME_TIME;
+let playing = false;
+let bestScore = parseInt(localStorage.getItem("whackBest") || "0");
+let moleTimer = null;
+let countdownTimer = null;
+let holes = [];
+
+BEST_EL.textContent = bestScore;
+
+// Build holes
+for (let i = 0; i < HOLE_COUNT; i++) {
+  const hole = document.createElement("div");
+  hole.className = "hole";
+  hole.dataset.index = i;
+  const mole = document.createElement("div");
+  mole.className = "mole";
+  mole.innerHTML = MOLE_SVG;
+  hole.appendChild(mole);
+  hole.addEventListener("click", () => whack(i));
+  // Also listen on the mole itself
+  mole.addEventListener("click", (e) => {
+    e.stopPropagation();
+    whack(i);
+  });
+  BOARD.appendChild(hole);
+  holes.push({ el: hole, mole: mole, active: false });
+}
+
+function popMole() {
+  // Clear current moles
+  holes.forEach(h => {
+    h.active = false;
+    h.mole.classList.remove("up");
+  });
+
+  // Random number of moles (1-2)
+  const count = Math.random() < 0.7 ? 1 : 2;
+  const indices = [];
+  while (indices.length < count) {
+    const idx = Math.floor(Math.random() * HOLE_COUNT);
+    if (!indices.includes(idx)) indices.push(idx);
+  }
+
+  indices.forEach(idx => {
+    holes[idx].active = true;
+    holes[idx].mole.classList.add("up");
+  });
+
+  // Schedule next pop
+  const delay = 600 + Math.random() * 900;
+  moleTimer = setTimeout(popMole, delay);
+}
+
+function whack(idx) {
+  if (!playing || !holes[idx].active) return;
+
+  holes[idx].active = false;
+  holes[idx].mole.classList.remove("up");
+
+  score++;
+  SCORE_EL.textContent = score;
+
+  // Bonk effect
+  const bonk = document.createElement("div");
+  bonk.className = "bonk";
+  bonk.textContent = "+1";
+  holes[idx].el.appendChild(bonk);
+  setTimeout(() => bonk.remove(), 500);
+}
+
+function startGame() {
+  score = 0;
+  timeLeft = GAME_TIME;
+  playing = true;
+  SCORE_EL.textContent = score;
+  TIME_EL.textContent = timeLeft;
+  START_BTN.disabled = true;
+  START_BTN.textContent = "游戏中...";
+  OVERLAY.classList.remove("show");
+
+  popMole();
+
+  countdownTimer = setInterval(() => {
+    timeLeft--;
+    TIME_EL.textContent = timeLeft;
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+function endGame() {
+  playing = false;
+  clearTimeout(moleTimer);
+  clearInterval(countdownTimer);
+
+  // Hide all moles
+  holes.forEach(h => {
+    h.active = false;
+    h.mole.classList.remove("up");
+  });
+
+  START_BTN.disabled = false;
+  START_BTN.textContent = "开始游戏";
+
+  // Update best
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem("whackBest", String(bestScore));
+    BEST_EL.textContent = bestScore;
+    OVERLAY_TITLE.textContent = "新纪录！";
+    OVERLAY_MSG.textContent = "你刷新了最高分！";
+  } else {
+    OVERLAY_TITLE.textContent = "游戏结束";
+    const msgs = ["差一点就破纪录了", "手感不错，再来一局", "地鼠说谢谢没打它", "稳住，下次能更高"];
+    OVERLAY_MSG.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+  }
+
+  FINAL_SCORE_EL.textContent = score;
+  OVERLAY.classList.add("show");
+}
+
+START_BTN.addEventListener("click", startGame);
+RESTART_BTN.addEventListener("click", startGame);
+</script>
+
+</body>
+</html>
