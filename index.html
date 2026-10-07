@@ -3,6 +3,9 @@
 <head data-page-node-id="uYyaI83hg7Ch6SO60pbKOB">
 <meta data-page-node-id="mcsL31VKTc5h6aSZsN12Wh" charset="UTF-8">
 <meta data-page-node-id="5mkha2tk5zCuXebh0M2ZQW" content="width=device-width, initial-scale=1.0" name="viewport">
+<meta name="description" content="打地鼠小游戏：30 秒限时，点击冒头的地鼠得分，挑战你的最高纪录。纯前端实现，打开即玩。">
+<meta name="theme-color" content="#2d5016">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='60' rx='38' ry='35' fill='%239b6b3f'/%3E%3Ccircle cx='36' cy='48' r='7' fill='%23fff'/%3E%3Ccircle cx='64' cy='48' r='7' fill='%23fff'/%3E%3Ccircle cx='38' cy='50' r='4' fill='%23222'/%3E%3Ccircle cx='66' cy='50' r='4' fill='%23222'/%3E%3Cellipse cx='50' cy='65' rx='6' ry='4' fill='%235c3a1e'/%3E%3C/svg%3E">
 <title data-page-node-id="w3SRsh1NiNsdzSH63jJTly" data-pnid-children="G8XlBpLRxmWlsKtWS6LAEY">打地鼠</title>
 <style data-page-node-id="QcnFSkzeGd9GmAYZ9yuSVC" data-pnid-children="cIIqm3X6nkt7rZxwiSuOgC">
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -298,10 +301,26 @@ const RESTART_BTN = document.getElementById("restartBtn");
 let score = 0;
 let timeLeft = GAME_TIME;
 let playing = false;
-let bestScore = parseInt(localStorage.getItem("whackBest") || "0");
+let bestScore = loadBest();
 let moleTimer = null;
 let countdownTimer = null;
 let holes = [];
+
+function loadBest() {
+  try {
+    return parseInt(localStorage.getItem("whackBest") || "0", 10) || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function saveBest(value) {
+  try {
+    localStorage.setItem("whackBest", String(value));
+  } catch (e) {
+    // 隐私模式下 localStorage 不可写，最高分不保存即可，不影响游戏
+  }
+}
 
 BEST_EL.textContent = bestScore;
 
@@ -402,7 +421,7 @@ function endGame() {
   // Update best
   if (score > bestScore) {
     bestScore = score;
-    localStorage.setItem("whackBest", String(bestScore));
+    saveBest(bestScore);
     BEST_EL.textContent = bestScore;
     OVERLAY_TITLE.textContent = "新纪录！";
     OVERLAY_MSG.textContent = "你刷新了最高分！";
@@ -418,6 +437,16 @@ function endGame() {
 
 START_BTN.addEventListener("click", startGame);
 RESTART_BTN.addEventListener("click", startGame);
+
+// 键盘快捷键：游戏中未开始时，空格 / 回车直接开局
+document.addEventListener("keydown", (e) => {
+  if (playing) return;
+  if (e.code !== "Space" && e.code !== "Enter") return;
+  // 按钮已获得焦点时，浏览器会自行触发 click，这里跳过以免开两局
+  if (document.activeElement === START_BTN || document.activeElement === RESTART_BTN) return;
+  e.preventDefault();
+  startGame();
+});
 </script>
 
 </body>
